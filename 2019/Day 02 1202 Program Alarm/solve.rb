@@ -35,13 +35,27 @@ puts "Running Self Diagnostic"
   end
 end
 
-puts "Running"
 input = File.read('./INPUT')
-codes = input.split(',').collect &:to_i
+codes = input.split(',').collect(&:to_i).freeze
 
-codes[1] = 12
-codes[2] = 2
-run codes
+puts "Run with 1: 12 and 2: 2"
+copy = codes.dup
+copy[1] = 12
+copy[2] = 2
+run copy
+puts "\t0: #{copy[0]}"
 
-puts "Output"
-puts codes.join(',')
+target = 19690720
+puts "Try all combinations of 1: (0..99) and 2: (0..99) to find 0:#{target}"
+100.times do |noun|
+  100.times do |verb|
+    copy = codes.dup
+    copy[1] = noun
+    copy[2] = verb
+    run copy
+    if copy[0] == 19690720
+      puts "\t1:#{noun}, 2:#{verb} results in 0:#{target}"
+      puts "\t\t100 * #{noun} + #{verb} = #{100 * noun + verb}"
+    end
+  end
+end
