@@ -1,149 +1,88 @@
 #!/usr/bin/env ruby
 
-class Grid
-  ORIGIN_MARK = "\e[#{32}mO\e[0m"
-  CROSS_MARK = "\e[#{31}mX\e[0m"
+examples = [
+  [['R8,U5,L5,D3', 'U7,R6,D4,L4'], 6],
+  [['R75,D30,R83,U83,L12,D49,R71,U7,L72', 'U62,R66,U55,R34,D71,R55,D58,R83'], 159],
+  [['R98,U47,R26,D63,R33,U87,L62,D20,R33,U53,R51', 'U98,R91,D20,R16,D67,R40,U7,R15,U6,R7'], 135]
+]
 
-  attr_accessor :intersections
+class Wire
+  attr_accessor :input, :path, :tip
+
+  def initialize(input)
+    self.input = input
+    self.path = []
+    self.tip = [0,0]
+    route!
+  end
+
+  def route!
+    input.split(',').each do |move|
+      direction = move[0..0]
+      distance = move[1..-1].to_i
+      distance.times do
+        case direction
+        when 'R'; right!
+        when 'L'; left!
+        when 'U'; up!
+        when 'D'; down!
+        end
+      end
+    end
+  end
+
+  def record!
+    self.path << tip.dup
+  end
+
+  def right!; self.record!;self.tip[0] += 1; end
+  def left!;  self.record!;self.tip[0] -= 1; end
+  def up!;    self.record!;self.tip[1] += 1; end
+  def down!;  self.record!;self.tip[1] -= 1; end
+end
+
+class Panel
+  attr_accessor :wires
 
   def initialize
-    @y_x = {0 => {0 => []}}
-    @intersections = []
+    self.wires = []
   end
 
-  def mark!(path)
-    @y_x[path.y] ||= {}
-    @y_x[path.y][path.x] ||= []
-    @y_x[path.y][path.x] << path
-    @intersections << [path.x, path.y] if @y_x[path.y][path.x].size > 1
+  def intersections
+    wires.collect(&:path).inject &:&
   end
 
-  def closest_intersection(x = 0, y = 0)
+  def distance_to_origin(point)
+    point[0].abs + point[1].abs
+  end
+
+  def closest_intersection_to_origin
     intersections.sort do |a, b|
-      a[0].abs + a[1].abs <=> b[0].abs + b[1].abs
-    end.first
+      distance_to_origin(a) <=> distance_to_origin(b)
+    end[1]
   end
 
-  def render
-    o = ''
-    ys = @y_x.keys.sort
-    min_y = ys.first
-    max_y = ys.last
-    lines = max_y - min_y
-    xs = @y_x.values.collect(&:keys).flatten.compact.uniq.sort
-    min_x = xs.first
-    max_x = xs.last
-    rows = max_x - min_x
-    line = min_y
-    row = min_x
-
-    rows.times do |row|
-      y = min_y + row
-      lines.times do |line|
-        x = min_x + line
-        if y == 0 && x == 0
-          print ORIGIN_MARK
-        else
-          cell = @y_x[y][x] rescue nil
-          if !cell || cell.size == 0
-            print ' '
-          elsif cell.size == 1
-            print cell.first.label
-          else
-            print CROSS_MARK
-          end
-        end 
-      end
-      print "\n"
-    end
+  def closest_intersection_distance_to_origin
+    distance_to_origin closest_intersection_to_origin
   end
 end
 
-class Path
-  attr_reader :x, :y, :label
-
-  def initialize(grid, instructions, label = 'X')
-    @grid = grid
-    @x = 0
-    @y = 0
-    @label = label
-    if instructions
-      instructions.split(',').each do |instruction|
-        direction = instruction[0..0]
-        distance = instruction[1..-1].to_i
-        move direction, distance
-      end
-    end
+examples.each do |paths, closest_intersection_distance|
+  panel = Panel.new
+  paths.each do |path|
+    panel.wires << Wire.new(path)
   end
 
-  def move(direction, distance)
-    distance.times do
-      case direction
-      when 'U'
-        @y += 1
-      when 'D'
-        @y -= 1
-      when 'R'
-        @x += 1
-      when 'L'
-        @x -= 1
-      end
-      mark!
-    end
-  end
-
-  def mark!
-    @grid.mark! self
-  end
+  puts "Expect #{paths.inspect} to have closest intersection distance of #{closest_intersection_distance}"
+  puts "\tpanel.closest_intersection_distance_to_origin returns: #{panel.closest_intersection_distance_to_origin}"
 end
 
-# Run tests
-puts "Running tests"
-[
-  [
-    [
-      'R8,U5,L5,D3',
-      'U7,R6,D4,L4'
-    ],
-    6
-  ],
-  [
-    [
-      'R75,D30,R83,U83,L12,D49,R71,U7,L72',
-      'U62,R66,U55,R34,D71,R55,D58,R83'
-    ],
-    159
-  ],
-  [
-    [
-      'R98,U47,R26,D63,R33,U87,L62,D20,R33,U53,R51',
-      'U98,R91,D20,R16,D67,R40,U7,R15,U6,R7'
-    ],
-    135
-  ]
-].each do |paths, expected_distance|
-  grid = Grid.new
-  Path.new(grid, paths[0], "\e[#{33}mA\e[0m")
-  Path.new(grid, paths[1], "\e[#{34}mB\e[0m")
-  closest = grid.closest_intersection
-  distance = closest[0].abs + closest[1].abs
-  grid.render
-  if distance == expected_distance
-    puts 'GO'
-  else
-    puts "NO GO"
-    puts "\tClosest intersection to origin found at #{closest}, #{closest[0].abs + closest[1].abs} from origin. Expected to be #{expected_distance} from origin."
-  end
-end
-exit
 input = File.read('./INPUT')
 path_1, path_2 = input.split
 
-grid = Grid.new
-Path.new(grid, path_1, "\e[#{33}mA\e[0m")
-Path.new(grid, path_2, "\e[#{34}mB\e[0m")
-#grid.render
+panel = Panel.new
+panel.wires << Wire.new(path_1)
+panel.wires << Wire.new(path_2)
 
-puts "Found intersetions at #{grid.intersections.inspect}"
-closest = grid.closest_intersection
-puts "Closest intersection to origin at #{closest}, #{closest[0].abs + closest[1].abs} from origin."
+puts "Finding lowest distance to origin of intersection of wires in INPUT."
+puts "#{panel.closest_intersection_distance_to_origin}"
