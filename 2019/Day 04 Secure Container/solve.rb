@@ -5,17 +5,7 @@ input = (372037..905157)
 possibles = 0
 
 def repeating?(x)
-  x = x.to_s
-  x.include?('00') ||
-  x.include?('11') ||
-  x.include?('22') ||
-  x.include?('33') ||
-  x.include?('44') ||
-  x.include?('55') ||
-  x.include?('66') ||
-  x.include?('77') ||
-  x.include?('88') ||
-  x.include?('99')
+  !!x.to_s.match(/(\d)\1{1,1}/)
 end
 
 def increasing?(x)
