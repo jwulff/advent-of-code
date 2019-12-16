@@ -72,7 +72,7 @@ class IntcodeComputer
   end
 
   def output
-    puts "Output: #{codes[codes[i + 1]]} (i: #{i}, codes[i-5..i-1]: #{codes[i-5..i-1]})"
+    puts "i: #{i}, Output: #{codes[codes[i + 1]]}"
     self.i += 2
   end
 end
@@ -96,3 +96,9 @@ puts "Running Self Diagnostic"
     puts "NO GO\n\tINPUT:\t#{test[0]}\n\tEXPECT:\t#{test[1]}\n\tACTUAL:\t#{result}"
   end
 end
+
+# Run INPUT
+input = File.read('./INPUT')
+codes = input.split(',').collect(&:to_i)
+ic = IntcodeComputer.new codes
+ic.run!
