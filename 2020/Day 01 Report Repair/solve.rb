@@ -15,3 +15,18 @@ input.each do |x|
   end
   break if found
 end
+
+found = false
+input.each do |x|
+  input.each do |y|
+    input.each do |z|
+      if x + y + z == 2020
+        puts x * y * z
+        found = true
+      end
+      break if found
+    end
+    break if found
+  end
+  break if found
+end
