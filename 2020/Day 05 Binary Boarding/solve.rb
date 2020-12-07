@@ -43,4 +43,18 @@ seats = input.split("\n").collect do |line|
   Seat.new line
 end
 
-puts seats.collect(&:id).max
+seats.sort! do |a, b|
+  a.id <=> b.id
+end
+
+puts seats.last.id
+
+x = seats.first.id - 1
+seats.each do |seat|
+  if seat.id - 1 == x
+    x = seat.id
+  else
+    puts x + 1
+    break
+  end
+end
