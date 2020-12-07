@@ -3,7 +3,7 @@
 input = File.read('./INPUT')
 
 class Map
-  attr_reader :x, :y, :map
+  attr_reader :x, :y, :map, :hits
 
   def initialize(input)
     @map = input.split("\n")
@@ -11,16 +11,27 @@ class Map
       line = line.split ''
     end
     @width = @map[0].size
+    restart!
+  end
+
+  def restart!
     @x = 0
     @y = 0
+    @hits = 0
   end
 
   def current
-    @map[@y][@x]
+    map[@y][@x] if @map[@y]
   end
 
   def tree?
     current == '#'
+  end
+
+  def move!(x, y)
+    right! x
+    down! y
+    @hits += 1 if tree?
   end
 
   def right!(moves)
@@ -33,21 +44,36 @@ class Map
   end
 
   def end?
-    @y < 0 || @y >= @map.size
+    !current
+  end
+
+  def run!(x, y)
+    restart!
+    loop do
+      move! x, y
+      break if end?
+    end
   end
 end
 
 map = Map.new input
+map.run! 3, 1
+puts map.hits
 
-trees = 0
-loop do
-  map.right! 3
-  map.down! 1
-  if map.end?
-    break
-  else
-    trees += 1 if map.tree?
-  end
+# Part 2
+
+slopes = [
+  [1, 1],
+  [3, 1],
+  [5, 1],
+  [7, 1],
+  [1, 2]
+]
+
+hits = slopes.collect do |x, y|
+  map.run! x, y
+  puts "#{x}, #{y} hits #{map.hits} trees"
+  map.hits
 end
 
-puts trees
+puts hits.inject(:*)
