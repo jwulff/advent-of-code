@@ -11,10 +11,14 @@ class Console
       pair = line.split
       [ pair[0].to_sym, pair[1].to_i ]
     end
+    reset!
+    puts self
+  end
+
+  def reset!
     @position = 0
     @accumulator = 0
     @log = []
-    puts self
   end
 
   def to_s
@@ -25,13 +29,45 @@ class Console
     while !end?
       log!
       send operation
-      puts self
       if log.include?(position)
-        puts "BREAK\tPosition #{position} has already been visited."
         break
+        return false
       end
     end
-    puts "END"
+    true
+  end
+
+  def swap_nop_or_jmp!(pos)
+    case instructions[pos][0]
+    when :jmp
+      instructions[pos][0] = :nop
+    when :nop
+      instructions[pos][0] = :jmp
+    end
+  end
+
+  def next_nop_or_jmp(pos = -1)
+    instructions.each_with_index do |i, n|
+      return n if n > pos && (i[0] == :nop || i[0] == :jmp)
+    end
+  end
+
+  def debug!
+    try_i = next_nop_or_jmp
+    loop do
+      swap_nop_or_jmp! try_i
+      reset!
+      run!
+      swap_nop_or_jmp! try_i
+      if end?
+        puts "SUCCESS\tSwapped #{try_i}"
+        puts accumulator
+        break
+      else
+        puts "FAILURE\tSwapped #{try_i}"
+        try_i = next_nop_or_jmp(try_i)
+      end
+    end
   end
 
   def log!
@@ -41,7 +77,7 @@ class Console
   def instruction; instructions[position]; end
   def operation; instruction[0]; end
   def argument; instruction[1]; end
-  def end?; position > instructions.size; end
+  def end?; position == instructions.size; end
 
   def acc
     self.accumulator += argument
@@ -60,4 +96,4 @@ end
 input = File.read('./INPUT')
 
 console = Console.new input
-console.run!
+console.debug!
