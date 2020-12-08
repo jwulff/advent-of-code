@@ -10,11 +10,12 @@ class Bag
     @bags
   end
 
-  attr_accessor :color, :parents
+  attr_accessor :color, :parents, :children
 
   def initialize(color)
     @color = color
     @parents = []
+    @children = {}
   end
 
   def to_s
@@ -22,7 +23,16 @@ class Bag
   end
 
   def ancestors
-    (parents + parents.collect{|p| p.ancestors}).flatten.uniq
+    (parents + parents.collect(&:ancestors)).flatten.uniq
+  end
+
+  def descendant_count
+    total = 0
+    children.each_pair do |child, count|
+      total += count
+      total += count * child.descendant_count
+    end
+    total
   end
 end
 
@@ -36,8 +46,10 @@ rules = input.split("\n").collect do |input|
       _, count, color = *x.match(/(\d+)\ (.+)\ bag/)
       child = Bag.for color
       child.parents << parent
+      parent.children[child] = count.to_i
     end
   end
 end
 
 puts Bag.for('shiny gold').ancestors.size
+puts Bag.for('shiny gold').descendant_count
