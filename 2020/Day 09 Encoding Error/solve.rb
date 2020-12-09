@@ -12,10 +12,26 @@ class XMAS
     @position = PREAMBLE_SIZE
   end
 
-  def run!
+  def contiguous_addends_for(number)
+    data.each_with_index do |n, i|
+      next if n >= number
+      sum = n
+      y = i + 1
+      while sum < number
+        sum += data[y]
+        if sum == number
+          return data[i..y]
+        else
+          y += 1
+        end
+      end
+    end
+  end
+
+  def next_invalid
     while !end?
       if !valid?
-        puts "Position: #{position}\tValue: #{value} is not valid."
+        return value
       end
       next!
     end
@@ -50,4 +66,9 @@ end
 input = File.read('./INPUT')
 
 xmas = XMAS.new input
-puts xmas.run!
+invalid = xmas.next_invalid
+puts invalid
+addends = xmas.contiguous_addends_for(invalid)
+addends.sort!
+puts addends.first + addends.last
+
